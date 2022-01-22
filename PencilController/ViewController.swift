@@ -4,6 +4,7 @@
 //
 //  Created by Simon Gladman on 21/11/2015.
 //  Copyright © 2015 Simon Gladman. All rights reserved.
+//  Modified by inoki on 1/22/22.
 //
 
 import UIKit
@@ -16,8 +17,8 @@ class ViewController: UIViewController
     let halfPi = CGFloat(M_PI_2)
     let pi = CGFloat(M_PI)
     
-    let ciContext = CIContext(EAGLContext: EAGLContext(API: EAGLRenderingAPI.OpenGLES2),
-        options: [kCIContextWorkingColorSpace: NSNull()])
+    let ciContext = CIContext(eaglContext: EAGLContext(api: EAGLRenderingAPI.openGLES2)!,
+        options: [CIContextOption.workingColorSpace: NSNull()])
 
     let coreImage = CIImage(image: UIImage(named: "DSCF0786.jpg")!)!
     
@@ -50,7 +51,7 @@ class ViewController: UIViewController
     {
         didSet
         {
-            label.hidden = filteringMode == .Off
+            label.isHidden = filteringMode == .Off
         }
     }
     
@@ -58,7 +59,7 @@ class ViewController: UIViewController
     {
         super.viewDidLoad()
         
-        view.backgroundColor = UIColor.blackColor()
+        view.backgroundColor = UIColor.black
         
         view.addSubview(imageView)
         view.addSubview(label)
@@ -68,17 +69,17 @@ class ViewController: UIViewController
         view.addSubview(brightnessContrastButton)
         view.addSubview(gammaExposureButton)
        
-        label.font = UIFont.monospacedDigitSystemFontOfSize(36, weight: UIFontWeightSemibold)
+        label.font = UIFont.monospacedDigitSystemFont(ofSize: 36, weight: UIFont.Weight.semibold)
         
-        label.textAlignment = NSTextAlignment.Center
+        label.textAlignment = NSTextAlignment.center
         label.text = "flexmonkey.blogspot.co.uk"
-        label.textColor = UIColor.whiteColor()
-        label.hidden = true
+        label.textColor = UIColor.white
+        label.isHidden = true
         
-        imageView.contentMode = UIViewContentMode.Center
+        imageView.contentMode = UIView.ContentMode.center
         
         sceneKitView.scene = scene
-        sceneKitView.backgroundColor = UIColor.clearColor()
+        sceneKitView.backgroundColor = UIColor.clear
         addLights()
         
         let camera = SCNCamera()
@@ -105,17 +106,17 @@ class ViewController: UIViewController
         
         applyFilter()
         
-        hueSaturationButton.addTarget(self, action: "filterButtonTouchDown:", forControlEvents: UIControlEvents.TouchDown)
-        hueSaturationButton.addTarget(self, action: "filterButtonTouchEnded:", forControlEvents: UIControlEvents.TouchUpInside)
+        hueSaturationButton.addTarget(self, action: #selector(self.filterButtonTouchDown(_:)), for: UIControl.Event.touchDown)
+        hueSaturationButton.addTarget(self, action: #selector(self.filterButtonTouchEnded(_:)), for: UIControl.Event.touchUpInside)
         
-        brightnessContrastButton.addTarget(self, action: "filterButtonTouchDown:", forControlEvents: UIControlEvents.TouchDown)
-        brightnessContrastButton.addTarget(self, action: "filterButtonTouchEnded:", forControlEvents: UIControlEvents.TouchUpInside)
+        brightnessContrastButton.addTarget(self, action: #selector(self.filterButtonTouchDown(_:)), for: UIControl.Event.touchDown)
+        brightnessContrastButton.addTarget(self, action: #selector(self.filterButtonTouchEnded(_:)), for: UIControl.Event.touchUpInside)
         
-        gammaExposureButton.addTarget(self, action: "filterButtonTouchDown:", forControlEvents: UIControlEvents.TouchDown)
-        gammaExposureButton.addTarget(self, action: "filterButtonTouchEnded:", forControlEvents: UIControlEvents.TouchUpInside)
+        gammaExposureButton.addTarget(self, action: #selector(self.filterButtonTouchDown(_:)), for: UIControl.Event.touchDown)
+        gammaExposureButton.addTarget(self, action: #selector(self.filterButtonTouchEnded(_:)), for: UIControl.Event.touchUpInside)
     }
 
-    func filterButtonTouchDown(button: ChunkyButton)
+    @objc func filterButtonTouchDown(_ button: ChunkyButton)
     {
         filteringMode = button.filteringMode
         
@@ -123,85 +124,84 @@ class ViewController: UIViewController
         
         if pencilOn
         {
-            SCNTransaction.setAnimationDuration(0.25)
+            SCNTransaction.animationDuration = 0.25
             cylinderNode.opacity = 1
         }
     }
     
-    func filterButtonTouchEnded(button: ChunkyButton)
+    @objc func filterButtonTouchEnded(_ button: ChunkyButton)
     {
         filteringMode = .Off
         
-        SCNTransaction.setAnimationDuration(0.25)
+        SCNTransaction.animationDuration = 0.25
         cylinderNode.opacity = 0
     }
     
-    override func touchesBegan(touches: Set<UITouch>, withEvent event: UIEvent?)
+    override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?)
     {
-        guard let touch = touches.first where
+        guard let touch = touches.first,
             filteringMode != .Off &&
-            touch.type == UITouchType.Stylus else
+                touch.type == UITouch.TouchType.stylus else
         {
             return
         }
-        
         pencilOn = true
         
-        pencilTouchHandler(touch)
-        
-        SCNTransaction.setAnimationDuration(0.25)
+        pencilTouchHandler(touch: touch)
+
+        SCNTransaction.animationDuration = 0.25
         cylinderNode.opacity = 1
     }
     
-    override func touchesMoved(touches: Set<UITouch>, withEvent event: UIEvent?)
+    override func touchesMoved(_ touches: Set<UITouch>, with event: UIEvent?)
     {
-        guard let touch = touches.first where
+        guard let touch = touches.first,
             filteringMode != .Off &&
-            touch.type == UITouchType.Stylus else
+                touch.type == UITouch.TouchType.stylus else
         {
             return
         }
         
-        pencilTouchHandler(touch)
+        pencilTouchHandler(touch: touch)
     }
     
-    override func touchesEnded(touches: Set<UITouch>, withEvent event: UIEvent?)
+    override func touchesEnded(_ touches: Set<UITouch>, with event: UIEvent?)
     {
-        guard touches.first?.type == UITouchType.Stylus else
+        guard touches.first?.type == UITouch.TouchType.stylus else
         {
             return
         }
         
         pencilOn = false
-        SCNTransaction.setAnimationDuration(0.25)
+        SCNTransaction.animationDuration = 0.25
         cylinderNode.opacity = 0
     }
     
     func pencilTouchHandler(touch: UITouch)
     {
-        guard let hitTestResult:SCNHitTestResult = sceneKitView.hitTest(touch.locationInView(view), options: nil).filter( { $0.node == plane }).first else
+        guard let hitTestResult:SCNHitTestResult = sceneKitView.hitTest(touch.location(in: view), options: nil).filter( { $0.node == plane }).first else
         {
             return
         }
         
-        SCNTransaction.setAnimationDuration(0)
+        SCNTransaction.animationDuration = 0
         
         cylinderNode.position = SCNVector3(hitTestResult.localCoordinates.x, hitTestResult.localCoordinates.y, 0)
-        cylinderNode.eulerAngles = SCNVector3(touch.altitudeAngle, 0.0, 0 - touch.azimuthAngleInView(view) - halfPi)
+        cylinderNode.eulerAngles = SCNVector3(touch.altitudeAngle, 0.0, 0 - touch.azimuthAngle(in: view) - halfPi)
         
         switch filteringMode
         {
         case .HueSaturation:
-            hueAngle = pi + touch.azimuthAngleInView(view)
+            hueAngle = pi + touch.azimuthAngle(in: view)
             saturation = 8 * ((halfPi - touch.altitudeAngle) / halfPi)
             
         case .BrightnessContrast:
-            brightness = touch.azimuthUnitVectorInView(view).dx * ((halfPi - touch.altitudeAngle) / halfPi)
-            contrast = 1 + touch.azimuthUnitVectorInView(view).dy * -((halfPi - touch.altitudeAngle) / halfPi)
+            brightness = touch.azimuthUnitVector(in: view).dx * ((halfPi - touch.altitudeAngle) / halfPi)
+            contrast = 1 + touch.azimuthUnitVector(in: view).dy * -((halfPi - touch.altitudeAngle) / halfPi)
 
         case .GammaExposure:
-            gamma = 1 + touch.azimuthUnitVectorInView(view).dx * ((halfPi - touch.altitudeAngle) / halfPi)
-            exposure = touch.azimuthUnitVectorInView(view).dy * -((halfPi - touch.altitudeAngle) / halfPi)
+            gamma = 1 + touch.azimuthUnitVector(in: view).dx * ((halfPi - touch.altitudeAngle) / halfPi)
+            exposure = touch.azimuthUnitVector(in: view).dy * -((halfPi - touch.altitudeAngle) / halfPi)
             
         case .Off:
             ()
@@ -220,7 +220,7 @@ class ViewController: UIViewController
         hueAdjust.setValue(hueAngle,
             forKey: kCIInputAngleKey)
         
-        colorControls.setValue(hueAdjust.valueForKey(kCIOutputImageKey) as! CIImage,
+        colorControls.setValue(hueAdjust.value(forKey: kCIOutputImageKey) as! CIImage,
             forKey: kCIInputImageKey)
         colorControls.setValue(saturation,
             forKey: kCIInputSaturationKey)
@@ -229,21 +229,20 @@ class ViewController: UIViewController
         colorControls.setValue(contrast,
             forKey: kCIInputContrastKey)
         
-        exposureAdjust.setValue(colorControls.valueForKey(kCIOutputImageKey) as! CIImage,
+        exposureAdjust.setValue(colorControls.value(forKey: kCIOutputImageKey) as! CIImage,
             forKey: kCIInputImageKey)
         exposureAdjust.setValue(exposure,
             forKey: kCIInputEVKey)
         
-        gammaAdjust.setValue(exposureAdjust.valueForKey(kCIOutputImageKey) as! CIImage,
+        gammaAdjust.setValue(exposureAdjust.value(forKey: kCIOutputImageKey) as! CIImage,
             forKey: kCIInputImageKey)
         gammaAdjust.setValue(gamma,
             forKey: "inputPower")
 
         
-        let cgImage = ciContext.createCGImage(gammaAdjust.valueForKey(kCIOutputImageKey) as! CIImage,
-            fromRect: coreImage.extent)
+        let cgImage = ciContext.createCGImage(gammaAdjust.value(forKey: kCIOutputImageKey) as! CIImage, from: coreImage.extent)
         
-        imageView.image =  UIImage(CGImage: cgImage)
+        imageView.image =  UIImage(cgImage: cgImage!)
     }
     
     func updateLabel()
@@ -269,7 +268,7 @@ class ViewController: UIViewController
         // ambient light...
         
         let ambientLight = SCNLight()
-        ambientLight.type = SCNLightTypeAmbient
+        ambientLight.type = SCNLight.LightType.ambient
         ambientLight.color = UIColor(white: 0.15, alpha: 1.0)
         let ambientLightNode = SCNNode()
         ambientLightNode.light = ambientLight
@@ -279,7 +278,7 @@ class ViewController: UIViewController
         // omni light...
         
         let omniLight = SCNLight()
-        omniLight.type = SCNLightTypeOmni
+        omniLight.type = SCNLight.LightType.omni
         omniLight.color = UIColor(white: 1.0, alpha: 1.0)
         let omniLightNode = SCNNode()
         omniLightNode.light = omniLight
@@ -293,7 +292,7 @@ class ViewController: UIViewController
         label.frame = CGRect(x: 0,
             y: topLayoutGuide.length,
             width: view.frame.width,
-            height: label.intrinsicContentSize().height)
+            height: label.intrinsicContentSize.height)
         
         imageView.frame = view.bounds
         sceneKitView.frame = view.bounds
@@ -301,19 +300,19 @@ class ViewController: UIViewController
         // Slightly cobbled together layout :)
         
         hueSaturationButton.frame = CGRect(x: 0,
-            y: view.frame.height - hueSaturationButton.intrinsicContentSize().height,
-            width: hueSaturationButton.intrinsicContentSize().width,
-            height: hueSaturationButton.intrinsicContentSize().height)
+            y: view.frame.height - hueSaturationButton.intrinsicContentSize.height,
+            width: hueSaturationButton.intrinsicContentSize.width,
+            height: hueSaturationButton.intrinsicContentSize.height)
         
-        brightnessContrastButton.frame = CGRect(x: hueSaturationButton.intrinsicContentSize().width + 20,
-            y: view.frame.height - hueSaturationButton.intrinsicContentSize().height,
-            width: hueSaturationButton.intrinsicContentSize().width,
-            height: hueSaturationButton.intrinsicContentSize().height)
+        brightnessContrastButton.frame = CGRect(x: hueSaturationButton.intrinsicContentSize.width + 20,
+            y: view.frame.height - hueSaturationButton.intrinsicContentSize.height,
+            width: hueSaturationButton.intrinsicContentSize.width,
+            height: hueSaturationButton.intrinsicContentSize.height)
         
-        gammaExposureButton.frame = CGRect(x: hueSaturationButton.intrinsicContentSize().width + 20 + hueSaturationButton.intrinsicContentSize().width + 20,
-            y: view.frame.height - hueSaturationButton.intrinsicContentSize().height,
-            width: hueSaturationButton.intrinsicContentSize().width,
-            height: hueSaturationButton.intrinsicContentSize().height)
+        gammaExposureButton.frame = CGRect(x: hueSaturationButton.intrinsicContentSize.width + 20 + hueSaturationButton.intrinsicContentSize.width + 20,
+            y: view.frame.height - hueSaturationButton.intrinsicContentSize.height,
+            width: hueSaturationButton.intrinsicContentSize.width,
+            height: hueSaturationButton.intrinsicContentSize.height)
     }
 
 }
@@ -337,26 +336,29 @@ class ChunkyButton: UIButton
     {
         self.filteringMode = filteringMode
         
-        super.init(frame: CGRectZero)
+        super.init(frame: CGRect(origin: CGPoint(x: 0, y: 0), size: CGSize(width: 0, height: 0)))
         
         titleLabel?.numberOfLines = 2
-        setTitle(title, forState: UIControlState.Normal)
-        titleLabel?.font = UIFont.boldSystemFontOfSize(24)
+        setTitle(title, for: UIControl.State.normal)
+        titleLabel?.font = UIFont.boldSystemFont(ofSize: 24)
         
         backgroundColor = defaultColor
-        setTitleColor(UIColor.whiteColor(), forState: UIControlState.Highlighted)
-        setTitleColor(UIColor.lightGrayColor(), forState: UIControlState.Normal)
+        setTitleColor(UIColor.white, for: UIControl.State.highlighted)
+        setTitleColor(UIColor.lightGray, for: UIControl.State.normal)
         
-        layer.borderColor = UIColor.whiteColor().CGColor
+        layer.borderColor = UIColor.white.cgColor
         layer.borderWidth = 2
         layer.cornerRadius = 5
+        
+        // self.intrinsicContentSize = CGSize(width: super.intrinsicContentSize.width + 20,
+        //    height: super.intrinsicContentSize.height + 10)
     }
     
-    override var highlighted: Bool
+    override var isHighlighted: Bool
     {
         didSet
         {
-            backgroundColor = highlighted ? highlightedColor : defaultColor
+            backgroundColor = isHighlighted ? highlightedColor : defaultColor
         }
     }
 
@@ -364,11 +366,13 @@ class ChunkyButton: UIButton
     {
         fatalError("init(coder:) has not been implemented")
     }
-    
+
+    /*
     override func intrinsicContentSize() -> CGSize
     {
         return CGSize(width: super.intrinsicContentSize().width + 20,
             height: super.intrinsicContentSize().height + 10)
     }
+     */
 }
 

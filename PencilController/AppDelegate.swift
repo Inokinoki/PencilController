@@ -4,11 +4,12 @@
 //
 //  Created by Simon Gladman on 21/11/2015.
 //  Copyright © 2015 Simon Gladman. All rights reserved.
+//  Modified by inoki on 1/22/22.
 //
 
 import UIKit
 
-@UIApplicationMain
+@main
 class AppDelegate: UIResponder, UIApplicationDelegate {
 
     var window: UIWindow?
